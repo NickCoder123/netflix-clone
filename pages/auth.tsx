@@ -1,10 +1,15 @@
+import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
+import { signIn } from "next-auth/react";
+import axios from "axios";
 
-import Input from "@/components/input";
+import Input from "./_components/input";
 
 const Auth = () => {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
 
   const [variant, setVariant] = useState("login");
@@ -14,6 +19,31 @@ const Auth = () => {
       currentVariant === "login" ? "register" : "login"
     );
   }, []);
+
+  const login = useCallback(async () => {
+    await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+      callbackUrl: "/",
+    });
+
+    router.push("/");
+  }, [email, password, router]);
+
+  const register = useCallback(async () => {
+    try {
+      await axios.post("/api/register", {
+        email,
+        name,
+        password,
+      });
+
+      login();
+    } catch (error) {
+      console.log(error);
+    }
+  }, [email, name, password, login]);
 
   return (
     <div className="relative h-full w-full bg-[url('/images/hero.jpg')] bg-no-repeat bg-center bg-fixed bg-cover">
@@ -30,18 +60,18 @@ const Auth = () => {
             <div className="flex flex-col gap-4">
               {variant === "register" && (
                 <Input
-                  label="Email"
-                  onChange={(e) => setEmail(e.target.value)}
-                  id="email"
-                  type="email"
-                  value={email}
+                  label="Username"
+                  onChange={(e) => setName(e.target.value)}
+                  id="name"
+                  value={name}
                 />
               )}
               <Input
-                label="Username"
-                onChange={(e) => setUsername(e.target.value)}
-                id="username"
-                value={username}
+                label="Email"
+                onChange={(e) => setEmail(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
               />
               <Input
                 label="Password"
@@ -51,7 +81,10 @@ const Auth = () => {
                 value={password}
               />
             </div>
-            <button className="bg-[#e50914] py-3 font-semibold text-white rounded-md w-full mt-10">
+            <button
+              onClick={variant === "login" ? login : register}
+              className="bg-[#e50914] py-3 font-semibold text-white rounded-md w-full mt-10"
+            >
               {variant === "login" ? "Login" : "Sign up"}
             </button>
             <p className="text-neutral-500 mt-12">
